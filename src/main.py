@@ -1,17 +1,17 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 
 from src.controllers import auth, post
-from src.database import database
-from src.exceptions import NotFoundPostError
+from src.database import database, engine, metadata
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from src.models.post import posts
+
     await database.connect()
+    metadata.create_all(engine)
     yield
     await database.disconnect()
 
@@ -66,7 +66,6 @@ Você será capaz de fazer:
 )
 
 app.add_middleware(
-    CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -76,10 +75,3 @@ app.add_middleware(
 app.include_router(auth.router, tags=["auth"])
 app.include_router(post.router, tags=["post"])
 
-
-@app.exception_handler(NotFoundPostError)
-async def not_found_post_exception_handler(request: Request, exc: NotFoundPostError):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.message},
-    )

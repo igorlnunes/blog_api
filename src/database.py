@@ -1,12 +1,14 @@
+import os
+
 import databases
 import sqlalchemy as sa
 
-from src.config import settings
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./tests.db")
 
-database = databases.Database(settings.database_url)
+database = databases.Database(DATABASE_URL)
 metadata = sa.MetaData()
 
-if settings.environment == "production":
-    engine = sa.create_engine(settings.database_url)
-else:
-    engine = sa.create_engine(settings.database_url, connect_args={"check_same_thread": False})
+if os.getenv("RENDER"):
+    engine = sa.create_engine(DATABASE_URL)
+else: 
+    engine = sa.create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
